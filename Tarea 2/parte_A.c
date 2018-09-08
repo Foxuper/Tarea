@@ -62,8 +62,8 @@ void borrar_Libros (Libros *L)
 void imprimir_Libros (Libros *L)
 {
 	Libro *actual = L->inicio;
-	
 	printf("\n -------- Libros --------");
+	
 	if (actual != NULL)
 	{
 		while (actual != NULL)
@@ -205,6 +205,7 @@ void borrar_Libro (Libros *L, char *titulo, int anio)
 	}
 }
 
+// -------- MAIN -------- //
 int main (void)
 {
 	// Se crea una lista de libros //
