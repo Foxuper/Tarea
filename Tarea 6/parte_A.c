@@ -26,12 +26,29 @@ Arbol *crear_Arbol      (void);
 void   borrar_Arbol     (Arbol *arbol);
 void   borrar_Arbol_Aux (Nodo *raiz);
 
+// Definiciones | Funciones Auxiliares //
+int   altura          (Nodo *raiz);
+Nodo *rotar_izquierda (Nodo *raiz);
+Nodo *rotar_derecha   (Nodo *raiz);
+int   obtener_balance (Nodo *raiz);
+
+// Definiciones | Funcion Insertar AVL //
+void insertar     (Arbol *arbol, int valor);
+void insertar_Aux (Nodo **referencia, Nodo *nodo);
+
+// Definiciones | Funcion Borrar AVL //
+void   borrar         (Arbol *arbol, int valor);
+void   borrar_Aux     (Nodo **referencia, int valor);
+void   borrar_nodo    (Nodo **referencia);
+int    num_hijos      (Nodo *nodo);
+Nodo  *obtener_Hijo   (Nodo *nodo);
+void   copiar_Datos   (Nodo *Original, Nodo *Copia);
+Nodo **maximo_Ref     (Nodo **referencia);
+
 // Definiciones | Funciones //
-void insertar            (Arbol *arbol, int valor);
-void insertar_Aux        (Nodo *raiz, Nodo *nodo);
-void recorrido_Preorden  (Nodo *raiz);
-void recorrido_Inorden   (Nodo *raiz);
-void recorrido_Postorden (Nodo *raiz);
+void  recorrido_Preorden  (Nodo *raiz);
+void  recorrido_Inorden   (Nodo *raiz);
+void  recorrido_Postorden (Nodo *raiz);
 
 // Funcion de Memoria | Crear Nodo //
 Nodo *crear_Nodo (int valor)
@@ -69,39 +86,7 @@ void borrar_Arbol_Aux (Nodo *raiz)
 	free(raiz);
 }
 
-// Funcion | Insertar //
-void insertar (Arbol *arbol, int valor)
-{
-	Nodo *nodo = crear_Nodo(valor);
-	
-	if (arbol->raiz != NULL)
-		insertar_Aux(arbol->raiz, nodo);
-	else
-		arbol->raiz = nodo;
-}
-
-// Funcion | Auxiliar de Insertar //
-void insertar_Aux (Nodo *raiz, Nodo *nodo)
-{
-	int diferencia = nodo->valor - raiz->valor;
-	
-	if (diferencia < 0)
-	{
-		if (raiz->left != NULL)
-			insertar_Aux(raiz->left, nodo);
-		else
-			raiz->left = nodo;
-	}
-	
-	if (diferencia > 0)
-	{
-		if (raiz->right != NULL)
-			insertar_Aux(raiz->right, nodo);
-		else
-			raiz->right = nodo;
-	}
-}
-
+// Funcion Auxiliar | Altura //
 int altura (Nodo *raiz)
 {
 	if (raiz != NULL)
@@ -118,7 +103,26 @@ int altura (Nodo *raiz)
 		return 0;
 }
 
-int balance (Nodo *raiz)
+// Funcion Auxiliar | Rotar Izquierda //
+Nodo *rotar_izquierda (Nodo *raiz)
+{
+	Nodo *pivote = raiz->right;
+	raiz->right = pivote->left;
+	pivote->left = raiz;
+	return pivote;
+}
+
+// Funcion Auxiliar | Rotar Derecha //
+Nodo *rotar_derecha (Nodo *raiz)
+{
+	Nodo *pivote = raiz->left;
+	raiz->left = pivote->right;
+	pivote->right = raiz;
+	return pivote;
+}
+
+// Funcion Auxiliar | Obtener Balance //
+int obtener_balance (Nodo *raiz)
 {
 	if (raiz != NULL)
 		return altura(raiz->left) - altura(raiz->right);
@@ -126,71 +130,185 @@ int balance (Nodo *raiz)
 		return 0;
 }
 
-Nodo *rotar_left (Nodo *raiz)
-{
-	Nodo *pivote = raiz->right;
-	pivote->left = raiz;
-	return pivote;
-}
-
-Nodo *rotar_right (Nodo *raiz)
-{
-	Nodo *pivote = raiz->left;
-	pivote->right = raiz;
-	return pivote;
-}
-
-Nodo *rotar_left_right (Nodo *a)
-{
-	Nodo *b = a->left;
-	Nodo *c = b->right;
-	
-	rotar_left(b);
-	rotar_right(a);
-	
-	return c;
-}
-
-Nodo *rotar_right_left (Nodo *a)
-{
-	Nodo *b = a->right;
-	Nodo *c = b->left;
-	
-	rotar_right(b);
-	rotar_left(a);
-	
-	return c;
-}
-
-void insertar_avl (Arbol *arbol, int valor)
+// Funcion | Insertar //
+void insertar (Arbol *arbol, int valor)
 {
 	Nodo *nodo = crear_Nodo(valor);
 	
 	if (arbol->raiz != NULL)
-		insertar_avl_aux(arbol->raiz, nodo);
+		insertar_Aux(&arbol->raiz, nodo);
 	else
 		arbol->raiz = nodo;
 }
 
-Nodo *insertar_avl_aux (Nodo *raiz, Nodo *nodo)
+// Funcion | Auxiliar de Insertar //
+void insertar_Aux (Nodo **referencia, Nodo *nodo)
 {
-	if (raiz == NULL)
-		return nodo;
-		
+	Nodo *raiz = *referencia;
 	int diferencia = nodo->valor - raiz->valor;
 	
+	// ----- Insercion del Nodo ----- //
 	if (diferencia < 0)
-		raiz.left = insertar_avl_aux(raiz.left, nodo);
-	else
-		raiz.right = insertar_avl_aux(raiz.right, nodo);
-		
-	int d_balance = balance(raiz);
+	{
+		if (raiz->left != NULL)
+			insertar_Aux(&raiz->left, nodo); // Recursividad //
+		else
+			raiz->left = nodo;
+	}
 	
-	if ((d_balance > 1) && (valor < raiz.left.valor))
-		return rotar_right(raiz);
+	if (diferencia > 0)
+	{
+		if (raiz->right != NULL)
+			insertar_Aux(&raiz->right, nodo); // Recursividad //
+		else
+			raiz->right = nodo;
+	}
+	
+	// ----- Rebalanceo Recursivo ----- //
+	int balance = obtener_balance(raiz);
+	
+	if (balance < -1)
+	{
+		if (nodo->valor < raiz->right->valor)
+		{
+			raiz->right = rotar_derecha(raiz->right);
+			*referencia = rotar_izquierda(raiz);
+		}
+		else if (nodo->valor > raiz->right->valor)
+			*referencia = rotar_izquierda(raiz);
+	}
+	
+	if (balance > 1)
+	{
+		if (nodo->valor > raiz->left->valor)
+		{
+			raiz->left = rotar_izquierda(raiz->left);
+			*referencia = rotar_derecha(raiz);
+		}
+		else if (nodo->valor < raiz->left->valor)
+			*referencia = rotar_derecha(raiz);
+	}
+}
+
+// Funcion | Borrar //
+void borrar (Arbol *arbol, int valor)
+{
+	if (arbol->raiz != NULL)
+		borrar_Aux(&arbol->raiz, valor);	
+}
+
+// Funcion | Auxiliar de Borrar //
+void borrar_Aux (Nodo **referencia, int valor)
+{
+	Nodo *raiz = *referencia;
+	int diferencia = valor - raiz->valor;
+	
+	// ----- Busqueda y eliminacion del nodo ----- //
+	if ((diferencia < 0) && (raiz->left != NULL))
+	{
+		if (raiz->left->valor != valor)
+			borrar_Aux(&raiz->left, valor); // Recursividad //
+		else
+			borrar_nodo(&raiz->left);
+	}
+	
+	if ((diferencia > 0) && (raiz->right != NULL))
+	{
+		if (raiz->right->valor != valor)
+			borrar_Aux(&raiz->right, valor); // Recursividad //
+		else
+			borrar_nodo(&raiz->right);
+	}
+	
+	if (diferencia == 0)
+		borrar_nodo(referencia);
+	
+	// ----- Rebalanceo Recursivo ----- //
+	int balance = obtener_balance(raiz);
+	
+	if (balance < -1)
+	{
+		if (obtener_balance(raiz->right) > 0)
+		{
+			raiz->right = rotar_derecha(raiz->right);
+			*referencia = rotar_izquierda(raiz);
+		}
+		else
+			*referencia = rotar_izquierda(raiz);
+	}
+	
+	if (balance > 1)
+	{
+		if (obtener_balance(raiz->left) < 0)
+		{
+			raiz->left = rotar_izquierda(raiz->left);
+			*referencia = rotar_derecha(raiz);
+		}
+		else
+			*referencia = rotar_derecha(raiz);
+	}
+}
+
+// Funcion Auxiliar | Borrar | Borrar Nodo //
+void borrar_nodo (Nodo **referencia)
+{
+	Nodo *nodo = *referencia;
+	
+	if (num_hijos(nodo) == 2)
+	{
+		Nodo **maximo = maximo_Ref(&nodo->left);
+		copiar_Datos(*maximo, nodo);
+		borrar_nodo(maximo);
+	}
+	else
+	{
+		Nodo *hijo = obtener_Hijo(nodo);
+		*referencia = hijo;
+		free(nodo);
+	}
+}
+
+// Funcion Auxiliar | Borrar | Numero de Hijos //
+int num_hijos (Nodo *nodo)
+{
+	int hijos = 0;
+	
+	if (nodo->left != NULL)
+		hijos++;
 		
-	if ((d_balance > 1) && (valor < raiz.left.valor))
-		return rotar_right(raiz);
+	if (nodo->right != NULL)
+		hijos++;
+		
+	return hijos;
+}
+
+// Funcion Auxiliar | Borrar | Obtener Hijo //
+Nodo *obtener_Hijo (Nodo *nodo)
+{
+	if (nodo->left != NULL)
+		return nodo->left;
+	
+	if (nodo->right != NULL)
+		return nodo->right;
+		
+	return NULL;
+}
+
+// Funcion Auxiliar | Borrar | Copiar Datos //
+void copiar_Datos (Nodo *Original, Nodo *Copia)
+{
+	Copia->valor = Original->valor;
+}
+
+// Funcion Auxiliar | Borrar | Referencia a Maximo //
+Nodo **maximo_Ref (Nodo **referencia)
+{
+	Nodo *nodo = *referencia;
+	
+	if (nodo->right != NULL)
+		return maximo_Ref(&nodo->right);
+	else
+		return referencia;
 }
 
 // Funcion | Recorrido Preorden //
@@ -257,7 +375,7 @@ int main (void)
 		printf("]");
 		
 		printf("\n\n 1) Insertar");
-		printf("\n 2) Reiniciar");
+		printf("\n 2) Borrar");
 		printf("\n 3) Salir");
 		printf("\n\n Opcion: ");
 		
@@ -271,8 +389,9 @@ int main (void)
 				insertar(arbol, valor);
 			break;
 			case '2':
-				borrar_Arbol(arbol);
-				arbol = crear_Arbol();
+				printf("\n Ingrese un valor a borrar: ");
+				scanf("%d", &valor);
+				borrar(arbol, valor);
 			break;
 			case '3':
 				printf("\n Presione una tecla para salir . . .");
