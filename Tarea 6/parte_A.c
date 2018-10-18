@@ -10,6 +10,7 @@ typedef int bool;
 typedef struct Nodo
 {
 	int valor;
+	int nodos_left;
 	struct Nodo *left;
 	struct Nodo *right;
 } Nodo;
@@ -18,6 +19,7 @@ typedef struct Nodo
 typedef struct Arbol
 {
 	Nodo *raiz;
+	int nodos;
 } Arbol;
 
 // Definiciones | Funciones de Memoria //
@@ -34,11 +36,11 @@ int   obtener_balance (Nodo *raiz);
 
 // Definiciones | Funcion Insertar AVL //
 void insertar     (Arbol *arbol, int valor);
-void insertar_Aux (Nodo **referencia, Nodo *nodo);
+void insertar_Aux (Arbol *arbol, Nodo **referencia, Nodo *nodo);
 
 // Definiciones | Funcion Borrar AVL //
 void   borrar         (Arbol *arbol, int valor);
-void   borrar_Aux     (Nodo **referencia, int valor);
+void   borrar_Aux     (Arbol *arbol, Nodo **referencia, int valor);
 void   borrar_nodo    (Nodo **referencia);
 int    num_hijos      (Nodo *nodo);
 Nodo  *obtener_Hijo   (Nodo *nodo);
@@ -46,9 +48,12 @@ void   copiar_Datos   (Nodo *Original, Nodo *Copia);
 Nodo **maximo_Ref     (Nodo **referencia);
 
 // Definiciones | Funciones //
-void  recorrido_Preorden  (Nodo *raiz);
-void  recorrido_Inorden   (Nodo *raiz);
-void  recorrido_Postorden (Nodo *raiz);
+double mediana             (Arbol *arbol);
+int    obtener_valor       (Nodo *raiz, int indice);
+int    contar_nodos        (Nodo *raiz);
+void   recorrido_Preorden  (Nodo *raiz);
+void   recorrido_Inorden   (Nodo *raiz);
+void   recorrido_Postorden (Nodo *raiz);
 
 // Funcion de Memoria | Crear Nodo //
 Nodo *crear_Nodo (int valor)
@@ -57,6 +62,7 @@ Nodo *crear_Nodo (int valor)
 	nodo->valor = valor;
 	nodo->left = NULL;
 	nodo->right = NULL;
+	nodo->nodos_left = 0;
 	return nodo;
 }
 
@@ -65,6 +71,7 @@ Arbol *crear_Arbol (void)
 {
 	Arbol *arbol = malloc(sizeof(Arbol));
 	arbol->raiz = NULL;
+	arbol->nodos = 0;
 	return arbol;
 }
 
@@ -135,14 +142,17 @@ void insertar (Arbol *arbol, int valor)
 {
 	Nodo *nodo = crear_Nodo(valor);
 	
-	if (arbol->raiz != NULL)
-		insertar_Aux(&arbol->raiz, nodo);
-	else
+	if (arbol->raiz == NULL)
+	{
 		arbol->raiz = nodo;
+		arbol->nodos++;
+	}
+	else
+		insertar_Aux(arbol, &arbol->raiz, nodo);	
 }
 
 // Funcion | Auxiliar de Insertar //
-void insertar_Aux (Nodo **referencia, Nodo *nodo)
+void insertar_Aux (Arbol *arbol, Nodo **referencia, Nodo *nodo)
 {
 	Nodo *raiz = *referencia;
 	int diferencia = nodo->valor - raiz->valor;
@@ -150,18 +160,24 @@ void insertar_Aux (Nodo **referencia, Nodo *nodo)
 	// ----- Insercion del Nodo ----- //
 	if (diferencia < 0)
 	{
-		if (raiz->left != NULL)
-			insertar_Aux(&raiz->left, nodo); // Recursividad //
-		else
+		if (raiz->left == NULL)
+		{
 			raiz->left = nodo;
+			arbol->nodos++;
+		}
+		else
+			insertar_Aux(arbol, &raiz->left, nodo); // Recursividad //	
 	}
 	
 	if (diferencia > 0)
 	{
-		if (raiz->right != NULL)
-			insertar_Aux(&raiz->right, nodo); // Recursividad //
-		else
+		if (raiz->right == NULL)
+		{
 			raiz->right = nodo;
+			arbol->nodos++;
+		}
+		else
+			insertar_Aux(arbol, &raiz->right, nodo); // Recursividad //	
 	}
 	
 	// ----- Rebalanceo Recursivo ----- //
@@ -188,17 +204,22 @@ void insertar_Aux (Nodo **referencia, Nodo *nodo)
 		else if (nodo->valor < raiz->left->valor)
 			*referencia = rotar_derecha(raiz);
 	}
+	
+	// Cuenta de nodos izquierdos //
+	raiz = *referencia;
+	if (raiz != NULL)
+		raiz->nodos_left = contar_nodos(raiz->left);
 }
 
 // Funcion | Borrar //
 void borrar (Arbol *arbol, int valor)
 {
 	if (arbol->raiz != NULL)
-		borrar_Aux(&arbol->raiz, valor);	
+		borrar_Aux(arbol, &arbol->raiz, valor);	
 }
 
 // Funcion | Auxiliar de Borrar //
-void borrar_Aux (Nodo **referencia, int valor)
+void borrar_Aux (Arbol *arbol, Nodo **referencia, int valor)
 {
 	Nodo *raiz = *referencia;
 	int diferencia = valor - raiz->valor;
@@ -206,22 +227,32 @@ void borrar_Aux (Nodo **referencia, int valor)
 	// ----- Busqueda y eliminacion del nodo ----- //
 	if ((diferencia < 0) && (raiz->left != NULL))
 	{
-		if (raiz->left->valor != valor)
-			borrar_Aux(&raiz->left, valor); // Recursividad //
-		else
+		if (raiz->left->valor == valor)
+		{
 			borrar_nodo(&raiz->left);
+			arbol->nodos--;
+		}
+		else
+			borrar_Aux(arbol, &raiz->left, valor); // Recursividad //
 	}
 	
 	if ((diferencia > 0) && (raiz->right != NULL))
 	{
-		if (raiz->right->valor != valor)
-			borrar_Aux(&raiz->right, valor); // Recursividad //
-		else
+		if (raiz->right->valor == valor)
+		{
 			borrar_nodo(&raiz->right);
+			arbol->nodos--;
+		}
+		else
+			borrar_Aux(arbol, &raiz->right, valor); // Recursividad //
 	}
 	
 	if (diferencia == 0)
+	{
 		borrar_nodo(referencia);
+		raiz = *referencia;
+		arbol->nodos--;
+	}
 	
 	// ----- Rebalanceo Recursivo ----- //
 	int balance = obtener_balance(raiz);
@@ -247,6 +278,11 @@ void borrar_Aux (Nodo **referencia, int valor)
 		else
 			*referencia = rotar_derecha(raiz);
 	}
+	
+	// ----- Cuenta de nodos izquierdos ----- //
+	raiz = *referencia;
+	if (raiz != NULL)
+		raiz->nodos_left = contar_nodos(raiz->left);
 }
 
 // Funcion Auxiliar | Borrar | Borrar Nodo //
@@ -309,6 +345,56 @@ Nodo **maximo_Ref (Nodo **referencia)
 		return maximo_Ref(&nodo->right);
 	else
 		return referencia;
+}
+
+// Funcion | Mediana //
+double mediana (Arbol *arbol)
+{
+	int mitad = arbol->nodos / 2;
+	
+	if ((mitad * 2) == arbol->nodos)
+	{
+		int a = obtener_valor(arbol->raiz, mitad);
+		int b = obtener_valor(arbol->raiz, mitad + 1);
+		
+		return (a + b) / 2.0;
+	}
+	else
+		return obtener_valor(arbol->raiz, mitad + 1);
+}
+
+// Funcion | Obtener Valor //
+int obtener_valor (Nodo *raiz, int indice)
+{
+	if (raiz != NULL)
+	{
+		int mitad = raiz->nodos_left + 1;
+	
+		if (indice < mitad)
+			return obtener_valor(raiz->left, indice);
+		else if (indice > mitad)
+			return obtener_valor(raiz->right, indice - mitad);
+		else
+			return raiz->valor;
+	}
+	else
+		return 0;
+}
+
+// Funcion | Contar Nodos //
+int contar_nodos (Nodo *raiz)
+{
+	if (raiz != NULL)
+	{
+		int nodos = 1;
+		
+		nodos += contar_nodos(raiz->left);
+		nodos += contar_nodos(raiz->right);
+		
+		return nodos;
+	}
+	else
+		return 0;
 }
 
 // Funcion | Recorrido Preorden //
@@ -376,7 +462,8 @@ int main (void)
 		
 		printf("\n\n 1) Insertar");
 		printf("\n 2) Borrar");
-		printf("\n 3) Salir");
+		printf("\n 3) Mediana");
+		printf("\n 4) Salir");
 		printf("\n\n Opcion: ");
 		
 		opcion = getchar();
@@ -394,6 +481,10 @@ int main (void)
 				borrar(arbol, valor);
 			break;
 			case '3':
+				printf("\n Mediana: %lg", mediana(arbol));
+				getchar();
+			break;
+			case '4':
 				printf("\n Presione una tecla para salir . . .");
 				salir = true;
 				getchar();
